@@ -1,25 +1,18 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-display" });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-import Navbar from "@/components/Navbar";
+import Navigation from "@/components/Navigation";
 import { AuthProvider } from "@/context/AuthContext";
 import { ToastProvider } from "@/components/Toast";
 import { TransitionProvider } from "@/components/TransitionProvider";
 
 export const metadata: Metadata = {
-  title: "GOLF LOTTO | Play. Track. Give.",
-  description: "The ultimate golf score tracker and monthly prize draw platform supporting charities.",
+  title: "DIGITAL HEROES | Prosperity & Purpose",
+  description: "The luxury golf lottery experience where precision meets philanthropy. Play your game, change the world.",
 };
 
 export default function RootLayout({
@@ -30,14 +23,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${spaceGrotesk.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col pt-20">
+      <body className="min-h-full bg-brand-dark text-white selection:bg-brand-gold selection:text-brand-dark">
         <ToastProvider>
           <AuthProvider>
-            <Navbar />
+            <Navigation />
             <TransitionProvider>
-              {children}
+              <main>
+                {children}
+              </main>
             </TransitionProvider>
           </AuthProvider>
         </ToastProvider>

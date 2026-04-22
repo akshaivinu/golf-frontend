@@ -6,7 +6,7 @@ interface RequestOptions extends RequestInit {
   body?: any;
 }
 
-export async function request(endpoint: string, options: RequestOptions = {}) {
+export async function request<T = any>(endpoint: string, options: RequestOptions = {}): Promise<T> {
   const { data: { session } } = await supabase.auth.getSession();
   const token = session?.access_token;
 
@@ -31,12 +31,12 @@ export async function request(endpoint: string, options: RequestOptions = {}) {
     throw new Error(data.error?.message || data.error || 'API Request failed');
   }
 
-  return data;
+  return data as T;
 }
 
 export const api = {
-  get: (endpoint: string, options?: RequestOptions) => request(endpoint, { ...options, method: 'GET' }),
-  post: (endpoint: string, body: any, options?: RequestOptions) => request(endpoint, { ...options, method: 'POST', body }),
-  put: (endpoint: string, body: any, options?: RequestOptions) => request(endpoint, { ...options, method: 'PUT', body }),
-  delete: (endpoint: string, options?: RequestOptions) => request(endpoint, { ...options, method: 'DELETE' }),
+  get: <T = any>(endpoint: string, options?: RequestOptions) => request<T>(endpoint, { ...options, method: 'GET' }),
+  post: <T = any>(endpoint: string, body: any, options?: RequestOptions) => request<T>(endpoint, { ...options, method: 'POST', body }),
+  put: <T = any>(endpoint: string, body: any, options?: RequestOptions) => request<T>(endpoint, { ...options, method: 'PUT', body }),
+  delete: <T = any>(endpoint: string, options?: RequestOptions) => request<T>(endpoint, { ...options, method: 'DELETE' }),
 };

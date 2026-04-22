@@ -1,20 +1,82 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams, useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import { api } from "@/lib/api";
+import { DashboardStats, DrawResult } from "@/types";
 
 export default function WinnerVerification() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const drawResultId = searchParams.get("draw_result_id");
+
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isValidating, setIsValidating] = useState(true);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleUpload = () => {
+  useEffect(() => {
+    async function checkEligibility() {
+      if (!drawResultId) {
+        setIsValidating(false);
+        setErrorMsg("Missing draw result ID.");
+        return;
+      }
+      try {
+        // Mocking validation: In production, backend should confirm owner & status
+        const results = await api.get('/draws/active'); 
+        // Logic: if current user doesn't have an active win matching this ID, block.
+        // For now, we trust the backend check on upload (which is already implemented).
+      } catch (err) {
+        setErrorMsg("Ineligible to claim this prize.");
+      } finally {
+        setIsValidating(false);
+      }
+    }
+    checkEligibility();
+  }, [drawResultId]);
+
+  const handleUpload = async () => {
+    if (!file || !drawResultId) return;
+    
     setIsUploading(true);
-    // Simulate upload
-    setTimeout(() => {
-      setIsUploading(false);
-      setStatus("success");
-    }, 2000);
+    setStatus("idle");
+    setErrorMsg("");
+
+    try {
+        // 1. Upload to Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${drawResultId}-${Math.random()}.${fileExt}`;
+        const filePath = `proofs/${fileName}`;
+
+        const { error: uploadError, data } = await supabase.storage
+            .from('winner-proofs')
+            .upload(filePath, file);
+
+        if (uploadError) throw uploadError;
+
+        // 2. Get Public URL
+        const { data: { publicUrl } } = supabase.storage
+            .from('winner-proofs')
+            .getPublicUrl(filePath);
+
+        // 3. Register with Backend
+        await api.post('/verifications/upload', {
+            draw_result_id: drawResultId,
+            proof_file_url: publicUrl
+        });
+
+        setStatus("success");
+    } catch (err: any) {
+        console.error("Upload failed:", err);
+        setStatus("error");
+        setErrorMsg(err.message || "Failed to upload proof. Please try again.");
+    } finally {
+        setIsUploading(false);
+    }
   };
 
   return (
